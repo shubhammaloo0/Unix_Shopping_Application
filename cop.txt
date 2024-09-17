@@ -1,0 +1,149 @@
+#!/bin/bash
+
+USER_DATA_FILE="user_data.txt"
+PRODUCTS_FILE="products.txt"
+SHOPPING_CART_FILE="shopping_cart.txt"
+ORDERS_FILE="orders.txt"
+LOGGED_IN_USER=""
+
+# Function to handle user signup
+signup() {
+    username=$(zenity --entry --title="Signup" --text="Enter your username:" )
+
+    # Check if the username already exists
+    if grep -q "^$username:" "$USER_DATA_FILE"; then
+        zenity --error --title="Signup Failed" --text="Username already exists. Please choose a different username."
+        return 1
+    fi
+
+    password=$(zenity --password --title="Signup" --text="Enter your password:")
+
+    # Store username and password in the user_data.txt file
+    echo "$username:$password" >> "$USER_DATA_FILE"
+    
+    zenity --info --title="Signup Successful" --text="Signup successful! You can now log in."
+}
+
+# Function to handle user login
+login() {
+    username=$(zenity --entry --title="Login" --text="Enter your username:")
+
+    # Check if the username exists
+    if grep -q "^$username:" "$USER_DATA_FILE"; then
+        password=$(zenity --password --title="Login" --text="Enter your password:")
+
+        # Validate the password
+        if grep -q "^$username:$password" "$USER_DATA_FILE"; then
+            LOGGED_IN_USER="$username"
+            zenity --info --title="Login Successful" --text="Welcome, $username!"
+            return 0
+        else
+            zenity --error --title="Login Failed" --text="Incorrect password. Please try again." 
+            return 1
+        fi
+    else
+        zenity --error --title="Login Failed" --text="Username not found. Please sign up first." 
+        return 1
+    fi
+}
+
+# Function to display product listing using Zenity
+display_products() {
+    products_text=""
+    while IFS=: read -r product_id name price quantity; do
+        products_text+="Product ID: $product_id\nName: $name\nPrice: $price\nQuantity: $quantity\n\n"
+    done < "$PRODUCTS_FILE"
+
+    zenity --text-info --title="Product Listing" --width=500 --height=300 --filename=<(echo -e "$products_text")  
+}
+
+# Function to add items to the shopping cart
+add_to_cart() {
+    product_id=$(zenity --entry --title="Add to Cart" --text="Enter the product ID:")
+    quantity=$(zenity --entry --title="Add to Cart" --text="Enter the quantity:")
+
+    if grep -q "^$product_id:" "$PRODUCTS_FILE"; then
+        echo "$product_id:$quantity" >> "$SHOPPING_CART_FILE"
+        zenity --info --title="Added to Cart" --text="Item added to your cart." 
+    else
+        zenity --error --title="Error" --text="Invalid product ID." 
+    fi
+}
+
+# Function to display and checkout the shopping cart
+checkout() {
+    total=0
+    while IFS=: read -r product_id quantity; do
+        name=$(grep "^$product_id:" "$PRODUCTS_FILE" | cut -d: -f2)
+        price=$(grep "^$product_id:" "$PRODUCTS_FILE" | cut -d: -f3)
+        subtotal=$((quantity * price))
+        total=$((total + subtotal))
+        echo "$product_id. $name - $quantity x $price = $subtotal"
+    done < "$SHOPPING_CART_FILE"
+
+    if [ "$total" -eq 0 ]; then
+        zenity --info --title="Shopping Cart" --text="Your shopping cart is empty." 
+    else
+        zenity --info --title="Shopping Cart" --text="Total: $total"
+        zenity --info --title="Checkout" --text="Thank you for your order! Total amount: $total" 
+        cat "$SHOPPING_CART_FILE" >> "$ORDERS_FILE"
+        rm "$SHOPPING_CART_FILE"
+    fi
+}
+
+# Function to view the shopping cart
+view_cart() {
+    if [ -s "$SHOPPING_CART_FILE" ]; then
+        zenity --text-info --title="Shopping Cart" --filename="$SHOPPING_CART_FILE" 
+    else
+        zenity --info --title="Shopping Cart" --text="Your shopping cart is empty." 
+    fi
+}
+
+# Main menu
+while true; do
+    if [ -z "$LOGGED_IN_USER" ]; then
+        choice=$(zenity --list --title="Main Menu" --column="Options" "Login" "Signup" "Exit")
+        
+        case $choice in
+            "Login")
+                login
+                ;;
+            "Signup")
+                signup
+                ;;
+            "Exit")
+                zenity --info --title="Exit" --text="Exiting..." 
+                exit 0
+                ;;
+            *)
+                zenity --error --title="Invalid Option" --text="Invalid option. Please choose a valid option."
+                ;;
+        esac
+    else
+        choice=$(zenity --list --title="Main Menu" --column="Options" "Display Products" "Add to Cart" "Checkout" "View Cart" "Logout")
+        
+        case $choice in
+            "Display Products")
+                display_products
+                ;;
+            "Add to Cart")
+                add_to_cart
+                ;;
+            "Checkout")
+                checkout
+                ;;
+            "View Cart")
+                view_cart
+                ;;
+            "Logout")
+                LOGGED_IN_USER=""
+                zenity --info --title="Logout" --text="Logging out..."
+                ;;
+            *)
+                zenity --error --title="Invalid Option" --text="Invalid option. Please choose a valid option."
+                ;;
+        esac
+    fi
+done
+

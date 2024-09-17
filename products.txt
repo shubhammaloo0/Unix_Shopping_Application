@@ -1,0 +1,20 @@
+101:Laptop:70000:10:Electronics
+102:Smart Phone:8000:10:Electronics
+103:Earbuds:5000:50:Electronics
+104:Charger:800:40:Electronics
+105:Rice:100:50:Grocery
+106:Atta:150:30:Grocery
+107:Oil:145:20:Grocery
+108:Ghee:500:100:Grocery
+109:Coca-Cola:20:100:Beverages
+110:Pepsi:20:100:Beverages
+111:Dew:20:100:Beverages
+112:Sprite:20:100:Beverages
+113:Treadmill:50000:10:Fitness
+114:Dum-bell:5000:50:Fitness
+115:Rod:2000:100:Fitness
+116:Cable:1000:50:Fitness
+117:Diapers:2000:300:Baby_Products
+118:Powder:1000:200:Baby_Products
+119:Body-Lotion:500:150:Baby_Products
+120:Tissue:250:100:Baby_Products
